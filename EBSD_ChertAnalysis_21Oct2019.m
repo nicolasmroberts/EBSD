@@ -7,8 +7,9 @@ plot(ebsd('Quartz-new'), ebsd('Quartz-new').orientations,'coordinates','on')
 % plot(ipfKey)
 
 
+%% just plot EBSD
 
-
+plot(ebsd)
 
 %% SUBSET DATA? 
 
@@ -56,24 +57,30 @@ ebsd = ebsd(ebsd.mad<1.2);
 
 
 %% CALCULATE GRAINS
+% [grains, ebsd] = constructGrains(ebsd,10); %10 degree threshhold for grains
 
-[grains, ebsd] = constructQuartzGrains(ebsd,10); %10 degree threshhold for grains
-
-
-
+ [grains, ebsd] = constructQuartzGrains(ebsd,10); %10 degree threshhold for grains
 
 
-%% PLOT GRAINS
+
+
+
+%% PLOT GRAINS and quartz orientation
 
 figure, 
 plot(ebsd('Quartz-new'), ebsd('Quartz-new').orientations,'coordinates','on')
 hold on
-plot(grains.boundary,'linewidth',1, 'linecolor','yellow')
+% % If you have multiple phases, you can add lines like the one below
+% plot(ebsd('Anorthite'), ebsd('Anorthite').orientations, 'coordinates', 'on')
+
+% plot the grain boundaries
+plot(grains.boundary,'linewidth',1, 'linecolor','black','linewidth',2)
 hold off
 
 
+%% PLOT JUST GRAINS
 
-
+plot(grains)
 
 
 
@@ -95,17 +102,21 @@ onePointPerGrainQuartzPF(grainsQuartz)
     
 [ebsdVortQuartz, ebsdBulkVortQuartz] = calcGrainsDispersion(grains('Quartz-new'), ebsd('Quartz-new'));
 
+% % you can do this with any phase
+% [ebsdVortAnorthite, ebsdBulkVortAnorthite] = calcGrainsDispersion(grains('Anorthite'), ebsd('Anorthite'));
+% 
+% % or you can do a CVA for all phases
+% [ebsdVortAll, ebsdBulkVortAll] = calcGrainsDispersion(grains, ebsd);
+
+
 
 %% Plot CVA results
 
 plotCVAResults(ebsdVortQuartz, ebsdBulkVortQuartz)
 
 
-
-
-
-
-
+% plotCVAResults(ebsdVortAnorthite, ebsdBulkVortAnorthite, 'Anorthite')
+% plotCVAResults(ebsdVortAll, ebsdBulkVortAll, 'All Phases')
 
 %% Misorientation Analysis
 
