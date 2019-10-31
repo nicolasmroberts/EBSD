@@ -29,8 +29,11 @@ plotPDF(ebsd('Quartz-new').orientations, Miller(0,0,0,1,csQuartz),'lower', 'cont
 text([vector3d.X,vector3d.Y,vector3d.Z],{'X','Y','Z'},'backgroundColor','w')
 mtexColorbar
 
+%% PLOT IPF 
 
-
+figure,
+plotIPDF(ebsd('Quartz-new').orientations, [vector3d.X, vector3d.Y, vector3d.Z], 'antipodal', 'contourf')
+mtexColorbar
 
 
 
@@ -65,38 +68,42 @@ ebsd = ebsd(ebsd.mad < 1);
 figure, 
 plot(ebsd('Quartz-new'), ebsd('Quartz-new').orientations,'coordinates','on')
 hold on
-% If you have multiple phases, you can add lines like the one below
+% % If you have multiple phases, you can add lines like the one below
 % plot(ebsd('Anorthite'), ebsd('Anorthite').orientations, 'coordinates', 'on')
 % plot(ebsd('Orthoclase'), ebsd('Orthoclase').orientations, 'coordinates', 'on')
 
-plot(ebsd('Titanite'), ebsd('Titanite').orientations, 'coordinates', 'on')
-plot(ebsd('Titanomagnetite'), ebsd('Titanomagnetite').orientations, 'coordinates', 'on')
-plot(ebsd('Biotite'), ebsd('Biotite').orientations, 'coordinates', 'on')
-% plot the grain boundaries
-plot(grains.boundary,'linewidth',1, 'linecolor','black','linewidth',2)
+% plot(ebsd('Titanite'), ebsd('Titanite').orientations, 'coordinates', 'on')
+% plot(ebsd('Titanomagnetite'), ebsd('Titanomagnetite').orientations, 'coordinates', 'on')
+% plot(ebsd('Biotite'), ebsd('Biotite').orientations, 'coordinates', 'on')
+% % plot the grain boundaries
+plot(grains.boundary,'linewidth',1, 'linecolor','white')
 hold off
 
 
 %% PLOT JUST GRAINS
-
+figure,
 plot(grains)
+hold on
+plot(grains.boundary,'linewidth',0.25,'linecolor','white')
+hold off
+%% SPO 
 
+[allOmega, a, b] = computeSPO(grains)
 
-
+plotSPORose(allOmega, 10)
 %% One Point Per Grain CPO
 
-grains_limited = grains(grains.grainSize > 0)
+grains_limited = grains(grains.grainSize > 100)
 
 
 grainsQuartz = grains_limited('Quartz-new');
 % grainsAnorthite = grains_limited('Anorthite')
-grainsTitanite = grains_limited('Titanite')
+% grainsTitanite = grains_limited('Titanite')
 
 
 
 onePointPerGrainQuartzPF(grainsQuartz)
-onePointPerGrainTitanitePF(grainsTitanite)
-
+% onePointPerGrainTitanitePF(grainsTitanite)
 % onePointPerGrainAnorthitePF(grainsAnorthite)
 
 
@@ -126,25 +133,26 @@ onePointPerGrainTitanitePF(grainsTitanite)
 %% Misorientation Analysis
 
 %% make small grains with 1° difference for correlated Misorientation Analysis
-[grainsSmall, ebsdSmall] = constructGrains(ebsd,0.2); %1 degree threshhold for grains
+[grainsSmall, ebsdSmall] = constructGrains(ebsd,1); %1 degree threshhold for grains
 
 %% Plot small grains
 
 figure, 
-plot(ebsdSmall('Titanite'), ebsdSmall('Titanite').orientations,'coordinates','on')
+%plot(ebsdSmall('Quartz'), ebsdSmall('Quartz').orientations,'coordinates','on')
+plot(grains)
 hold on
-plot(grainsSmall.boundary,'linewidth',1, 'linecolor','yellow')
+plot(grainsSmall.boundary,'linewidth',1, 'linecolor','white')
 hold off
 
 
 %% COMPUTE THE UNCORRELATED MISORIENTATIONS OF QUARTZ
 
-[uncorrMis, odf, uncorrMDF, Mindex] = computeUncorrelatedMiso(ebsdSmall,'Titanite');
+[uncorrMis, odf, uncorrMDF, Mindex] = computeUncorrelatedMiso(ebsdSmall,'Quartz-new');
 
 
 %% PLOT UNCORRELATED MISORIENTATION OF QUARTZ
 
-plotUncorrelatedMisoHist(uncorrMis, odf, uncorrMDF, Mindex, 'Titanite')
+plotUncorrelatedMisoHist(uncorrMis, odf, uncorrMDF, Mindex, 'Quartz')
 
 
 %% Correlated Misorientation Analysis
@@ -159,16 +167,17 @@ plotUncorrelatedMisoHist(uncorrMis, odf, uncorrMDF, Mindex, 'Titanite')
     
 %% Uncorrelated axis distribution
 figure,
-plotAxisDistribution(uncorrMis,'smooth', 'antipodal')
+plotAxisDistribution(uncorrMis,'smooth', 'antipodal','contourf')
+mtexColorMap(flipud(viridis))
+mtexColorbar
 mtexTitle('uncorrelated axis distribution')
     
 %% Untextured axis distribution
 figure,
-plotAxisDistribution(ebsd('Quartz-new').CS,ebsd('Quartz-new').CS,'antipodal')
+plotAxisDistribution(ebsd('Quartz-new').CS,ebsd('Quartz-new').CS,'antipodal','contourf')
 mtexTitle('random texture')
-mtexColorMap parula
-setColorRange('equal')
-mtexColorbar('multiples of random distribution')
+mtexColorMap('white2black')
+mtexColorbar
 
     
 %% Misorienation axis distribution Pole Figure
@@ -181,8 +190,9 @@ boundaryMisoAxes = boundaries.misorientation;
 %% MISORIENTATION Axis plot (1-10°)
 
 figure,
-plotAxisDistribution(boundaryMisoAxes(boundaryMisoAxes.angle./degree < 10),'smooth')
+plotAxisDistribution(boundaryMisoAxes(boundaryMisoAxes.angle./degree < 10),'contourf')
 mtexTitle('Boundary (correlated) axis distribution 1° - 10°')
+mtexColorMap('white2black')
 mtexColorbar
 
 %% 
@@ -212,10 +222,21 @@ plotMisoAxisPoleFigure(ebsdSmall, boundaries(boundaries.misorientation.angle./de
 %% Recrystallized Grainsize Analysis
     
 
-sampleName = 'AME16_132XZ'; % Compatible with both .ctf and .cpr/crc formats
+sampleName = 'AME18_100XZ'; % Compatible with both .ctf and .cpr/crc formats
+
+[grainSize, OneStanDev, grainsMergedReX, grainsReX] = recrystallizedGrainSize(ebsd, grains,CS, sampleName);
+
+%%
+
+grainsRel = grains(~ismember(grains.id, grainsReX.id))
+grainsRel_limited = grainsRel(grainsRel.grainSize > 0)
+
+grainsReX_limited = grainsReX(grainsReX.grainSize > 0)
+
+grainsQuartzReX = grainsReX_limited('Quartz-new');
 
 
-recrystallizedGrainSize(ebsd, grains,CS, sampleName)
+onePointPerGrainQuartzPF(grainsReX_limited('Quartz-new'))
 
 
 %% GrainSize

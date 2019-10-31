@@ -1,6 +1,38 @@
-function [grainSize, OneStanDev, rexNonBorder, grainsReX] = recrystallizedGrainSize(ebsd, grains,CS, sampleName)
-%UNTITLED9 Summary of this function goes here
-%   Detailed explanation goes here
+% RexRelict.m - Cross et al.
+%
+% A script to calculate recrystallized grain size in a deformed
+% polycrystalline aggregate containing both recrystallized and relict
+% grains. Recrystallized grains (small, low strain) are separated from
+% relict (large, high strain) grains using the grain orientation spread
+% (GOS). GOS is the average 'mis2mean' value for each grain, where mis2mean
+% is the misorientation between each pixel in a grain, and the mean
+% orientation of that grain. 
+%
+% To use with different data (i.e. different phases) use the MTEX import
+% wizard and replace lines 24-31.
+%
+% Please direct all questions to A. J. Cross
+
+sampleName = 'AME18_013XZ_2'; % Compatible with both .ctf and .cpr/crc formats
+
+%% Calculate grains
+
+rawebsd = ebsd;
+ebsd = ebsd('indexed');
+ebsd = ebsd('Quartz-new');
+
+% Construct grains using a critical misorientation of 10 degrees
+[grains ebsd.grainId ebsd.mis2mean] = calcGrains(ebsd,'angle',10*degree);
+
+% Remove wild spikes (1 pixel grains)
+% - this step drastically reduces computation time, mostly w.r.t. twin merging
+ebsd(grains(grains.grainSize == 1)).phase = 0;
+ebsd = ebsd('indexed');
+
+% Reconstruct grains without wild-spikes
+[grains ebsd.grainId ebsd.mis2mean] = calcGrains(ebsd,'angle',10*degree);
+
+
 %% Remove twin boundaries
 
 % Find all quartz-quartz grain boundaries
@@ -19,10 +51,10 @@ twinBoundary = gb_qtz(ind);
 
 %% Plot EBSD pixel data
 
-% figure
-% plot(ebsd,ebsd.orientations)
-%     hold on
-% plot(mergedGrains.boundary)
+figure
+plot(ebsd,ebsd.orientations)
+    hold on
+plot(mergedGrains.boundary)
 
 %% Remove poorly constrained grains
 
@@ -36,11 +68,9 @@ fraction = (full(mergedGrains.grainSize).*(stepsize^2))./mergedGrains.area;
 
 % Use trade-off curve to find cutoff between well-constrained and 
 % poorly-constrained grains
-% knee = tradeOff(fraction);
-%     xlabel('Number of grains (cumulative)')
-%     ylabel('Indexed fraction')
-
-knee = 0.5;
+knee = tradeOff(fraction);
+    xlabel('Number of grains (cumulative)')
+    ylabel('Indexed fraction')
 
 % Keep only the well-constrained grains, and those made up of 4 or more pixels
 condition = (full(mergedGrains.grainSize) >= 4) & (fraction > knee);
@@ -123,8 +153,6 @@ relictD = 2*equivalentRadius(relictNonBorder);
 rexD = 2*equivalentRadius(rexNonBorder);
 
 
-grainsReX = grains(grains.GOS/degree < knee);
-
 %% Get grain size statistics for the recrystallized grains
 
 amean_low = mean(rexD); % Arithmetic mean
@@ -177,11 +205,3 @@ disp(' ')
 disp(['RMS recrystallized grain size = ',num2str(rmsmean_low,3),...
     ' +/- ',num2str(a1std_low,3),' microns'])
 disp(' ')
-
-%%
-
-grainSize = rmsmean_low
-
-OneStanDev = a1std_low
-end
-

@@ -6,10 +6,12 @@ if nargin < 3
     phaseLabel = 'Quartz-new';
 end
 
+
 figure,
-plot(ebsdVortQuartz.eV1, 'antipodal','lower','contourf','halfwidth',10*degree), mtexColorMap(flipud(lbmap(64,'RedBlue'))), mtexColorbar
+plot(ebsdVortQuartz.eV1, 'antipodal','lower','contourf','halfwidth',10*degree) 
+mtexColorMap('white2black')
+
 hold on
-% The next 2 lines add a colorbar and labels it
 c = mtexColorbar;
 c.Label.String = 'M.U.D.';
 % This next line adds a text box that says how many measurements are used
@@ -23,6 +25,6 @@ plot(xvector,'MarkerEdgeColor','k','MarkerFaceColor','w','Marker','^','MarkerSiz
 plot(-yvector,'MarkerEdgeColor','k','MarkerFaceColor','w','Marker','s','MarkerSize',12)
 plot(yvector,'MarkerEdgeColor','k','MarkerFaceColor','w','Marker','o','MarkerSize',12)
 drawnow
-mtexColorbar
+
 end
 

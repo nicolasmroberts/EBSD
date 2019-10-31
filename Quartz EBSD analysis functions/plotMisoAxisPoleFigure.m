@@ -18,9 +18,9 @@ phase_misor_axes = axis(ori(:,1),ori(:,2));
 phase_misor_ang = angle(ori(:,1),ori(:,2),'antipodal')./degree;
 
 figure,
-plot(phase_misor_axes,'antipodal','lower','smooth','halfwidth',10*degree)
+plot(phase_misor_axes,'antipodal','lower','contourf','halfwidth',10*degree)
 annotation('textbox',[0 .7 0 .3],'String',sprintf('All %s misorientation axes',phaseLable),'FitBoxToText','on');
-drawnow
+mtexColorMap('white2black')
 mtexColorbar
 
 
